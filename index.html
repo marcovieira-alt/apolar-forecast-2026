@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecast 2026 — Regiões 1, 2 e 3 | Apolar Franquias</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1f2d45;
+    --text: #f0f4ff;
+    --muted: #8896b3;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --teal: #14b8a6;
+    --purple: #a855f7;
+    --orange: #f97316;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 60px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-left h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header-left p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .header-right { text-align: right; }
+  .badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+  }
+  .breakeven-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #1e3a5f, #1e2d4a);
+    border: 1px solid #3b82f6;
+    color: #60a5fa;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(59,130,246,0.1); }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--kpi-color, var(--accent));
+    border-radius: 16px 16px 0 0;
+  }
+  .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .kpi-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .delta-neg { color: var(--red); }
+  .delta-pos { color: var(--green); }
+  .delta-warn { color: var(--yellow); }
+
+  /* GRID LAYOUT */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .grid-1 { margin-bottom: 24px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* CHART CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .card-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+  .tag-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tag-green { background: rgba(16,185,129,0.15); color: #34d399; }
+  .tag-red { background: rgba(239,68,68,0.15); color: #f87171; }
+  .tag-yellow { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .tag-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .chart-wrap { position: relative; }
+
+  /* LOJAS TABLE */
+  .lojas-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .lojas-table th {
+    text-align: left;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .lojas-table td { padding: 10px 12px; border-bottom: 1px solid rgba(31,45,69,0.5); }
+  .lojas-table tr:last-child td { border-bottom: none; }
+  .lojas-table tr:hover td { background: rgba(59,130,246,0.04); }
+  .bar-cell { display: flex; align-items: center; gap: 8px; }
+  .mini-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #3b82f6, #6366f1); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: var(--green); }
+  .dot-gray { background: var(--muted); }
+  .region-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; }
+  .r1 { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .r2 { background: rgba(99,102,241,0.2); color: #818cf8; }
+  .r3 { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+  /* SCENARIO TABLE */
+  .scenario-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scenario-table th {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .scenario-table td { padding: 10px 16px; text-align: center; border-bottom: 1px solid rgba(31,45,69,0.5); }
+  .scenario-table tr:last-child td { border-bottom: none; }
+  .scenario-highlight { background: rgba(59,130,246,0.08); }
+  .scenario-highlight td { color: #60a5fa; font-weight: 600; }
+
+  /* ALERT SECTION */
+  .alerts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .alert-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--alert-color);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .alert-icon { font-size: 20px; line-height: 1; }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .alert-desc { font-size: 12px; color: var(--muted); }
+
+  /* FOOTER */
+  .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .vs-conselho {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 11px;
+  }
+  .vs-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; }
+  .vs-label { color: var(--muted); }
+  .vs-val { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Forecast 2026 — Regiões 1, 2 e 3</h1>
+    <p>Apolar Franquias · Análise Executiva · Aprovado para apresentação ao Conselho</p>
+  </div>
+  <div class="header-right">
+    <div class="badge">Gerado em 15/03/2026</div><br>
+    <div class="breakeven-badge">⚡ Breakeven: Julho/2026</div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="section-title">Indicadores Estratégicos</div>
+<div class="kpi-grid">
+  <div class="kpi" style="--kpi-color: #3b82f6">
+    <div class="kpi-label">Receita Projetada</div>
+    <div class="kpi-value">R$ 1,86M</div>
+    <div class="kpi-sub">vs R$ 2,12M Conselho</div>
+    <div class="kpi-delta delta-neg">▼ -12% vs aprovado</div>
+  </div>
+  <div class="kpi" style="--kpi-color: #ef4444">
+    <div class="kpi-label">Despesa Projetada</div>
+    <div class="kpi-value">R$ 1,85M</div>
+    <div class="kpi-sub">vs R$ 1,53M Conselho</div>
+    <div class="kpi-delta delta-neg">▲ +21% vs aprovado</div>
+  </div>
+  <div class="kpi" style="--kpi-color: #f59e0b">
+    <div class="kpi-label">Resultado Líquido</div>
+    <div class="kpi-value">R$ 11,7k</div>
+    <div class="kpi-sub">Margem 0,6%</div>
+    <div class="kpi-delta delta-neg">▼ -98% vs Conselho (R$ 592k)</div>
+  </div>
+  <div class="kpi" style="--kpi-color: #10b981">
+    <div class="kpi-label">Meta de Vendas</div>
+    <div class="kpi-value">13 lojas</div>
+    <div class="kpi-sub">7 startups + 6 conversões</div>
+    <div class="kpi-delta delta-warn">⚡ Breakeven em 11 franquias</div>
+  </div>
+  <div class="kpi" style="--kpi-color: #a855f7">
+    <div class="kpi-label">Caixa Necessário H1</div>
+    <div class="kpi-value">R$ 186k</div>
+    <div class="kpi-sub">Jan–Jun negativo</div>
+    <div class="kpi-delta delta-warn">⚠ Aportar antes de Jan/26</div>
+  </div>
+  <div class="kpi" style="--kpi-color: #14b8a6">
+    <div class="kpi-label">CC69 Mensal Base</div>
+    <div class="kpi-value">R$ 121k</div>
+    <div class="kpi-sub">Média Jan-Fev/26 realizado</div>
+    <div class="kpi-delta delta-warn">⚠ Teto alerta: R$ 135k</div>
+  </div>
+</div>
+
+<!-- RECEITA vs DESPESA -->
+<div class="section-title">Desempenho Mensal</div>
+<div class="grid-1">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Receita vs Despesa Mensal 2026</div>
+        <div class="card-subtitle">Projeção mês a mês — valores em R$ mil</div>
+      </div>
+      <span class="card-tag tag-blue">Visão Anual</span>
+    </div>
+    <div class="chart-wrap" style="height: 280px">
+      <canvas id="recDesp"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTADO + ACUMULADO -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Resultado Mensal</div>
+        <div class="card-subtitle">Positivo a partir de Julho/2026</div>
+      </div>
+      <span class="card-tag tag-yellow">Resultado</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="resultado"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Resultado Acumulado (Caixa)</div>
+        <div class="card-subtitle">Recuperação total em Dezembro/2026</div>
+      </div>
+      <span class="card-tag tag-green">Acumulado</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="acumulado"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- COMPOSIÇÃO RECEITA + PIPELINE -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Composição da Receita</div>
+        <div class="card-subtitle">Distribuição por fonte — R$ 1,86M total</div>
+      </div>
+      <span class="card-tag tag-purple">Mix</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="composicao"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Pipeline de Vendas de Franquias</div>
+        <div class="card-subtitle">Abertura acumulada de unidades — meta 13</div>
+      </div>
+      <span class="card-tag tag-blue">Pipeline</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="pipeline"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- CONSELHO vs PROJEÇÃO -->
+<div class="section-title">Comparativo Conselho vs Projeção Real</div>
+<div class="grid-1">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Forecast Aprovado × Projeção Atualizada</div>
+        <div class="card-subtitle">Desvio crítico no resultado: -R$ 581k vs Conselho</div>
+      </div>
+      <span class="card-tag tag-red">Desvio</span>
+    </div>
+    <div class="chart-wrap" style="height: 220px">
+      <canvas id="conselho"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- LOJAS -->
+<div class="section-title">Performance por Loja — 2025 (Base Royalties)</div>
+<div class="grid-1">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Produção e Royalties por Loja</div>
+        <div class="card-subtitle">Concentração em 3 lojas = 65% da produção — risco alto</div>
+      </div>
+      <span class="card-tag tag-yellow">⚠ Concentração</span>
+    </div>
+    <table class="lojas-table">
+      <thead>
+        <tr>
+          <th>Loja</th>
+          <th>Região</th>
+          <th>Produção 2025</th>
+          <th>Representatividade</th>
+          <th>Royalties</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="lojasBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- COMPOSIÇÃO DESPESA -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Composição da Despesa</div>
+        <div class="card-subtitle">CC69 base 80% · Implantação 10% · Recorrente novas 10%</div>
+      </div>
+      <span class="card-tag tag-red">Custos</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="compDesp"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">CC69 — Distribuição de Gastos</div>
+        <div class="card-subtitle">Média Jan-Fev/2026 · Total R$ 121k/mês</div>
+      </div>
+      <span class="card-tag tag-red">CC69</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="cc69"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- SENSIBILIDADE -->
+<div class="section-title">Análise de Sensibilidade</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Resultado por Nº de Vendas</div>
+        <div class="card-subtitle">Cada franquia incremental = +R$ 47k no resultado</div>
+      </div>
+      <span class="card-tag tag-purple">Cenários</span>
+    </div>
+    <div class="chart-wrap" style="height: 240px">
+      <canvas id="sensib"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Tabela de Cenários</div>
+        <div class="card-subtitle">Breakeven em 11 vendas — margem de segurança: 2 unidades</div>
+      </div>
+      <span class="card-tag tag-yellow">Risco</span>
+    </div>
+    <table class="scenario-table">
+      <thead>
+        <tr><th>Vendas</th><th>Resultado Est.</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>8 franquias</td><td style="color:#ef4444">-R$ 200.000</td><td>🔴 Prejuízo grave</td></tr>
+        <tr><td>10 franquias</td><td style="color:#f97316">-R$ 100.000</td><td>🟠 Abaixo break</td></tr>
+        <tr><td>11 franquias</td><td style="color:#f59e0b">R$ 0</td><td>🟡 Breakeven</td></tr>
+        <tr class="scenario-highlight"><td><strong>13 franquias ← META</strong></td><td>R$ 11.669</td><td>✅ Base case</td></tr>
+        <tr><td>15 franquias</td><td style="color:#10b981">R$ 84.000</td><td>🟢 Upside</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top: 16px; padding: 12px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px;">
+      <div style="font-size: 12px; color: #fbbf24; font-weight: 600;">⚡ Margem de segurança crítica</div>
+      <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Apenas 2 franquias abaixo da meta já geram prejuízo. Pipeline deve ser monitorado mensalmente.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTAS -->
+<div class="section-title">Gatilhos de Revisão Imediata</div>
+<div class="alerts">
+  <div class="alert-item" style="--alert-color: #ef4444">
+    <div class="alert-icon">🔴</div>
+    <div>
+      <div class="alert-title">Despesa CC69 > R$ 135k/mês</div>
+      <div class="alert-desc">Investigar causas. Base atual: R$ 121k. Margem: R$ 14k (11,5%).</div>
+    </div>
+  </div>
+  <div class="alert-item" style="--alert-color: #ef4444">
+    <div class="alert-item" style="--alert-color: #ef4444">
+    <div class="alert-icon">🔴</div>
+    <div>
+      <div class="alert-title">Vendas acumuladas &lt; 3 até Jun/26</div>
+      <div class="alert-desc">Acionar plano de contingência comercial imediato.</div>
+    </div>
+  </div>
+  <div class="alert-item" style="--alert-color: #f59e0b">
+    <div class="alert-icon">🟡</div>
+    <div>
+      <div class="alert-title">Royalties &lt; R$ 40k/mês por 3 meses</div>
+      <div class="alert-desc">Revisar projeção de produção das lojas existentes.</div>
+    </div>
+  </div>
+  <div class="alert-item" style="--alert-color: #f59e0b">
+    <div class="alert-icon">🟡</div>
+    <div>
+      <div class="alert-title">Sem venda por 45+ dias</div>
+      <div class="alert-desc">Acionar pipeline urgente. Risco breakeven comprometido.</div>
+    </div>
+  </div>
+  <div class="alert-item" style="--alert-color: #3b82f6">
+    <div class="alert-icon">🔵</div>
+    <div>
+      <div class="alert-title">Pato Branco / Caiobá / Itapoá</div>
+      <div class="alert-desc">65% da produção. Monitorar produção dessas 3 lojas individualmente.</div>
+    </div>
+  </div>
+  <div class="alert-item" style="--alert-color: #a855f7">
+    <div class="alert-icon">💜</div>
+    <div>
+      <div class="alert-title">Caixa H1: R$ 186k</div>
+      <div class="alert-desc">Garantir disponibilidade antes de Jan/26 para cobrir seis meses negativos.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Apolar Franquias · Forecast 2026 Regiões 1, 2 e 3 · Uso interno — Confidencial<br>
+  Gerado por MAR (OpenClaw) com base em análise Claude.ai · 15/03/2026
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+
+const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const REC  = [54977,91294,91899,126337,136415,147070,195598,170183,226098,216720,203646,201007];
+const DESP = [121111,137611,140111,142611,145111,147611,170652,159152,178152,166652,169152,171652];
+const RES  = [-66134,-46317,-48212,-16274,-8695,-541,24946,11031,47946,50068,34494,29356];
+const ACUM = [-66134,-112451,-160663,-176937,-185632,-186173,-161227,-150196,-102250,-52182,-17688,11669];
+const ROY_EX = [54977,49402,35907,60133,55139,55582,47146,41741,40692,55704,39714,29785];
+const ROY_NV = [0,972,5832,6804,12636,13608,20412,22842,29646,36936,39852,47142];
+const TAX_FR = [0,40920,50160,59400,68640,77880,128040,105600,155760,124080,124080,124080];
+const PIPE   = [0,1,2,3,4,5,7,8,10,11,12,13];
+const CC69   = [121111,121111,121111,121111,121111,121111,125152,125152,125152,125152,125152,125152];
+const IMPL   = [0,14000,14000,14000,14000,14000,28000,14000,28000,14000,14000,14000];
+const RECOR  = [0,2500,5000,7500,10000,12500,17500,20000,25000,27500,30000,32500];
+
+const gridColor = 'rgba(31,45,69,0.8)';
+const tickColor = '#8896b3';
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false }, datalabels: { display: false } },
+  scales: {
+    x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } },
+    y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 },
+      callback: v => 'R$' + (Math.abs(v) >= 1000 ? (v/1000).toFixed(0)+'k' : v) } }
+  }
+};
+
+// 1. Receita vs Despesa
+new Chart(document.getElementById('recDesp'), {
+  type: 'bar',
+  data: {
+    labels: MESES,
+    datasets: [
+      { label: 'Receita', data: REC, backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 6, borderSkipped: false },
+      { label: 'Despesa', data: DESP, backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 6, borderSkipped: false }
+    ]
+  },
+  options: { ...baseOpts,
+    plugins: {
+      legend: { display: true, labels: { color: '#8896b3', font: { size: 12 } } },
+      datalabels: { display: false }
+    }
+  }
+});
+
+// 2. Resultado mensal
+new Chart(document.getElementById('resultado'), {
+  type: 'bar',
+  data: {
+    labels: MESES,
+    datasets: [{
+      data: RES,
+      backgroundColor: RES.map(v => v >= 0 ? 'rgba(16,185,129,0.75)' : 'rgba(239,68,68,0.65)'),
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: { ...baseOpts }
+});
+
+// 3. Acumulado
+new Chart(document.getElementById('acumulado'), {
+  type: 'line',
+  data: {
+    labels: MESES,
+    datasets: [{
+      data: ACUM,
+      borderColor: '#6366f1',
+      backgroundColor: ctx => {
+        const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+        g.addColorStop(0,'rgba(99,102,241,0.25)');
+        g.addColorStop(1,'rgba(99,102,241,0)');
+        return g;
+      },
+      fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#6366f1',
+      borderWidth: 2.5
+    }]
+  },
+  options: { ...baseOpts,
+    plugins: {
+      annotation: {},
+      datalabels: {
+        display: ctx => ctx.dataIndex === 11,
+        color: '#34d399', font: { weight: 'bold', size: 12 },
+        formatter: v => 'R$' + (v/1000).toFixed(0) + 'k',
+        anchor: 'end', align: 'top'
+      }
+    }
+  }
+});
+
+// 4. Composição receita - doughnut
+new Chart(document.getElementById('composicao'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Roy. Existentes', 'Roy. Novas', 'Taxa Franquia'],
+    datasets: [{
+      data: [565920, 236682, 1058640],
+      backgroundColor: ['#3b82f6','#6366f1','#a855f7'],
+      borderWidth: 0, hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { display: true, position: 'right', labels: { color: '#8896b3', font: { size: 11 }, padding: 12 } },
+      datalabels: {
+        display: true, color: '#fff', font: { weight: 'bold', size: 12 },
+        formatter: (v, ctx) => {
+          const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+          return (v/total*100).toFixed(0)+'%';
+        }
+      }
+    }
+  }
+});
+
+// 5. Pipeline
+new Chart(document.getElementById('pipeline'), {
+  type: 'line',
+  data: {
+    labels: MESES,
+    datasets: [
+      {
+        label: 'Acumulado Real',
+        data: PIPE,
+        borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)',
+        fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#10b981', borderWidth: 2.5
+      },
+      {
+        label: 'Meta (13)',
+        data: Array(12).fill(13),
+        borderColor: 'rgba(245,158,11,0.5)', borderDash: [5,4], borderWidth: 1.5,
+        pointRadius: 0
+      }
+    ]
+  },
+  options: { ...baseOpts,
+    plugins: {
+      legend: { display: true, labels: { color: '#8896b3', font: { size: 11 } } },
+      datalabels: { display: false }
+    },
+    scales: { ...baseOpts.scales,
+      y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + ' lojas' } }
+    }
+  }
+});
+
+// 6. Conselho vs Real
+new Chart(document.getElementById('conselho'), {
+  type: 'bar',
+  data: {
+    labels: ['Receita', 'Despesa', 'Resultado'],
+    datasets: [
+      { label: 'Conselho Aprovado', data: [2123435, 1530757, 592678],
+        backgroundColor: 'rgba(99,102,241,0.7)', borderRadius: 8, borderSkipped: false },
+      { label: 'Projeção Real', data: [1861242, 1849574, 11669],
+        backgroundColor: [
+          'rgba(59,130,246,0.7)', 'rgba(239,68,68,0.7)', 'rgba(245,158,11,0.7)'
+        ], borderRadius: 8, borderSkipped: false }
+    ]
+  },
+  options: { ...baseOpts,
+    plugins: {
+      legend: { display: true, labels: { color: '#8896b3', font: { size: 12 } } },
+      datalabels: {
+        display: true, color: '#fff', font: { size: 11, weight: '600' },
+        formatter: v => 'R$' + (v >= 1000000 ? (v/1000000).toFixed(2)+'M' : (v/1000).toFixed(0)+'k'),
+        anchor: 'end', align: 'top'
+      }
+    },
+    scales: { ...baseOpts.scales,
+      y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks,
+        callback: v => 'R$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'k')
+      }}
+    }
+  }
+});
+
+// 7. Composição Despesa
+new Chart(document.getElementById('compDesp'), {
+  type: 'bar',
+  data: {
+    labels: MESES,
+    datasets: [
+      { label: 'CC69 Base', data: CC69, backgroundColor: 'rgba(239,68,68,0.65)', borderRadius: 4 },
+      { label: 'Implantação', data: IMPL, backgroundColor: 'rgba(245,158,11,0.65)', borderRadius: 4 },
+      { label: 'Recorrente Novas', data: RECOR, backgroundColor: 'rgba(168,85,247,0.65)', borderRadius: 4 }
+    ]
+  },
+  options: { ...baseOpts,
+    plugins: {
+      legend: { display: true, labels: { color: '#8896b3', font: { size: 11 } } },
+      datalabels: { display: false }
+    },
+    scales: { ...baseOpts.scales,
+      x: { ...baseOpts.scales.x, stacked: true },
+      y: { ...baseOpts.scales.y, stacked: true }
+    }
+  }
+});
+
+// 8. CC69 pie
+new Chart(document.getElementById('cc69'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Serviços PJ', 'Internet/Telecom', 'Propaganda', 'Publicidade', 'Pessoal', 'Outros'],
+    datasets: [{
+      data: [67161, 16368, 13840, 13000, 7444, 3298],
+      backgroundColor: ['#ef4444','#3b82f6','#f59e0b','#6366f1','#10b981','#8896b3'],
+      borderWidth: 0, hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: {
+      legend: { display: true, position: 'right', labels: { color: '#8896b3', font: { size: 11 }, padding: 10 } },
+      datalabels: {
+        display: true, color: '#fff', font: { weight: 'bold', size: 11 },
+        formatter: (v, ctx) => {
+          const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+          return (v/total*100).toFixed(0)+'%';
+        }
+      }
+    }
+  }
+});
+
+// 9. Sensibilidade
+new Chart(document.getElementById('sensib'), {
+  type: 'bar',
+  data: {
+    labels: ['8 vendas','10 vendas','11 vendas\n(break)','13 vendas\n(meta)','15 vendas'],
+    datasets: [{
+      data: [-200000,-100000,0,11669,84000],
+      backgroundColor: [-200000,-100000,0,11669,84000].map(v =>
+        v < 0 ? 'rgba(239,68,68,0.7)' : v === 0 ? 'rgba(245,158,11,0.7)' : 'rgba(16,185,129,0.7)'
+      ),
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: { ...baseOpts,
+    plugins: {
+      datalabels: {
+        display: true, color: '#fff', font: { size: 11, weight: '600' },
+        formatter: v => v === 0 ? 'Break' : 'R$' + (v/1000).toFixed(0)+'k',
+        anchor: v => v < 0 ? 'start' : 'end',
+        align: v => v < 0 ? 'bottom' : 'top'
+      }
+    }
+  }
+});
+
+// Lojas table
+const lojas = [
+  {nome:'Pato Branco',reg:'R1',prod:27264989,roy:142139,status:'ativa'},
+  {nome:'Caiobá',reg:'R1',prod:15675930,roy:82121,status:'ativa'},
+  {nome:'Itapoá',reg:'R2',prod:7952083,roy:42941,status:'ativa'},
+  {nome:'Guaratuba',reg:'R1',prod:7184700,roy:38797,status:'ativa'},
+  {nome:'Garuva',reg:'R2',prod:2226667,roy:12024,status:'ativa'},
+  {nome:'Joinville',reg:'R2',prod:2166466,roy:11697,status:'ativa'},
+  {nome:'Irati',reg:'R1',prod:1935667,roy:10453,status:'ativa'},
+  {nome:'Guarapuava',reg:'R1',prod:1926667,roy:10404,status:'ativa'},
+  {nome:'Antonina',reg:'R1',prod:959000,roy:5179,status:'ativa'},
+  {nome:'Passo Fundo',reg:'R3',prod:515950,roy:2786,status:'ativa'},
+  {nome:'Pontal do Paraná',reg:'R1',prod:627000,roy:3386,status:'ativa'},
+  {nome:'Ponta Grossa',reg:'R1',prod:0,roy:0,status:'inativa'},
+  {nome:'Brusque',reg:'R2',prod:0,roy:0,status:'NVT'},
+  {nome:'Florianópolis',reg:'R2',prod:0,roy:0,status:'NVT'},
+];
+const maxProd = Math.max(...lojas.map(l=>l.prod));
+const totalProd = lojas.reduce((s,l)=>s+l.prod,0);
+const tbody = document.getElementById('lojasBody');
+lojas.forEach(l => {
+  const pct = totalProd > 0 ? (l.prod/totalProd*100).toFixed(1) : 0;
+  const barW = maxProd > 0 ? (l.prod/maxProd*120) : 0;
+  const regClass = l.reg === 'R1' ? 'r1' : l.reg === 'R2' ? 'r2' : 'r3';
+  const dotClass = l.status === 'ativa' ? 'dot-green' : 'dot-gray';
+  tbody.innerHTML += `<tr>
+    <td><strong>${l.nome}</strong></td>
+    <td><span class="region-badge ${regClass}">${l.reg}</span></td>
+    <td>R$ ${l.prod > 0 ? (l.prod/1000000).toFixed(2)+'M' : '—'}</td>
+    <td>
+      <div class="bar-cell">
+        <div class="mini-bar" style="width:${barW}px; opacity:${l.prod>0?1:0.2}"></div>
+        <span style="font-size:12px;color:var(--muted)">${l.prod>0?pct+'%':'—'}</span>
+      </div>
+    </td>
+    <td>${l.roy > 0 ? 'R$ '+l.roy.toLocaleString('pt-BR') : '—'}</td>
+    <td><span class="status-dot ${dotClass}"></span> ${l.status}</td>
+  </tr>`;
+});
+</script>
+</body>
+</html>
